@@ -97,11 +97,11 @@ public class InMemoryKVService implements KVService {
     }
 
     private void handleGet(HttpExchange exchange, String id) throws IOException {
-        byte[] value = storage.get(id);
-        if (value == null) {
-            sendResponse(exchange, 404, "Not Found".getBytes());
-        } else {
+        try {
+            byte[] value = storage.get(id);
             sendResponse(exchange, 200, value);
+        } catch (Exception e) {
+            sendResponse(exchange, 404, "Not Found".getBytes());
         }
     }
 
