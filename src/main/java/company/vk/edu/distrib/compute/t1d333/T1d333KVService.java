@@ -131,7 +131,7 @@ public class T1d333KVService implements KVService {
     @Override
     public void start() {
         server.start();
-        log.info("KiKiselevKVService started on port {}", port);
+        log.info("T1d333KVService started on port {}", port);
     }
 
     @Override
@@ -142,6 +142,6 @@ public class T1d333KVService implements KVService {
         } catch (IOException e) {
             log.error("Error while closing dao", e);
         }
-        log.info("KiKiselevKVService stopped");
+        log.info("T1d333KVService stopped");
     }
 }
