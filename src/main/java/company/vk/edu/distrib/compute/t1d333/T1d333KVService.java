@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
@@ -63,6 +65,10 @@ public class T1d333KVService implements KVService {
     }
 
     private void handleStatus(HttpExchange exchange) throws IOException {
+        if (!"GET".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405);
+            return;
+        }
         sendResponse(exchange, 200, new byte[0]);
     }
 
@@ -118,16 +124,19 @@ public class T1d333KVService implements KVService {
         for (String param : query.split("&")) {
             String[] pair = param.split("=", 2);
             if (pair.length == 2 && pair[0].equals(paramName)) {
-                return pair[1];
+                return URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
             }
         }
         return null;
     }
 
     private void sendResponse(HttpExchange exchange, int statusCode, byte[] body) throws IOException {
-        exchange.sendResponseHeaders(statusCode, body.length);
+        long contentLength = body.length == 0 ? -1 : body.length;
+        exchange.sendResponseHeaders(statusCode, contentLength);
         try (var os = exchange.getResponseBody()) {
-            os.write(body);
+            if (body.length > 0) {
+                os.write(body);
+            }
         }
         exchange.close();
     }
