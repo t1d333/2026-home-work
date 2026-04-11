@@ -14,6 +14,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.NoSuchElementException;
 
 public class T1d333KVService implements KVService {
@@ -22,6 +23,7 @@ public class T1d333KVService implements KVService {
     private static final String METHOD_GET = "GET";
     private static final String METHOD_PUT = "PUT";
     private static final String METHOD_DELETE = "DELETE";
+    private static final String STORAGE_DIR_PROPERTY = "t1d333.storage.dir";
 
     private final HttpServer server;
     private final Dao<byte[]> dao;
@@ -38,7 +40,11 @@ public class T1d333KVService implements KVService {
     }
 
     private static Path resolveStorageDir(int port) {
-        return Path.of(".t1d333-data", "port-" + port).toAbsolutePath().normalize();
+        String configuredStorageDir = System.getProperty(STORAGE_DIR_PROPERTY);
+        Path baseDir = configuredStorageDir == null || configuredStorageDir.isBlank()
+                ? Paths.get(System.getProperty("java.io.tmpdir"), "t1d333-data")
+                : Paths.get(configuredStorageDir);
+        return baseDir.resolve("port-" + port).toAbsolutePath().normalize();
     }
 
     private void setupRoutes() {
@@ -60,6 +66,8 @@ public class T1d333KVService implements KVService {
                     case METHOD_DELETE -> handleDelete(exchange);
                     default -> sendError(exchange, 405);
                 }
+            } catch (IllegalArgumentException e) {
+                sendError(exchange, 400);
             } catch (Exception e) {
                 log.error("Error in entity handler", e);
                 sendError(exchange, 500);
@@ -127,7 +135,11 @@ public class T1d333KVService implements KVService {
         for (String param : query.split("&")) {
             String[] pair = param.split("=", 2);
             if (pair.length == 2 && pair[0].equals(paramName)) {
-                return URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
+                try {
+                    return URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Malformed query parameter encoding", e);
+                }
             }
         }
         return null;
