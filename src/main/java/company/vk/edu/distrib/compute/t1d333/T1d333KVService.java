@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.NoSuchElementException;
 
 public class T1d333KVService implements KVService {
@@ -22,7 +24,8 @@ public class T1d333KVService implements KVService {
 
     public T1d333KVService(int port) throws IOException {
         this.port = port;
-        this.dao = new InMemoryDao();
+        Path storageDir = Files.createTempDirectory("t1d333-dao-" + port + "-");
+        this.dao = new FileDao(storageDir);
         this.server = HttpServer.create(new InetSocketAddress("localhost", port), 0);
         setupRoutes();
     }
@@ -134,6 +137,11 @@ public class T1d333KVService implements KVService {
     @Override
     public void stop() {
         server.stop(0);
+        try {
+            dao.close();
+        } catch (IOException e) {
+            log.error("Error while closing dao", e);
+        }
         log.info("KiKiselevKVService stopped");
     }
 }
