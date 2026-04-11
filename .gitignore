@@ -29,5 +29,5 @@ build/
 !gradle-wrapper.jar
 
 .idea/
-out/q
+out/
 .vscode/
